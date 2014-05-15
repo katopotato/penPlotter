@@ -19,7 +19,8 @@ public class PenPlotter {
 				Point p2 = plane.addPoint(Character.getNumericValue(currentLine.charAt(X2)), Character.getNumericValue(currentLine.charAt(Y2)));
 				plane.addEdge(p1, p2);
 			}
-			
+			System.out.println("the edges are:");
+			plane.printEdges();
 			System.out.println("Testing draw");
 			Draw draw = new Draw(plane);
 			draw.draw();

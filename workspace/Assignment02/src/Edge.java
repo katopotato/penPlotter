@@ -55,6 +55,24 @@ public class Edge {
 		System.out.print("  with cost:" + getCn());
 		// add all of these edges onto list???
 	}
+	
+	/**
+	 * Compare two edges together
+	 * They are equal if they have same start and end points
+	 * @param other
+	 */
+	public boolean compareEdge(Edge other) {
+		Point thisP1 = this.getP1();
+		Point thisP2 = this.getP2();
+		Point otherP1 = this.getP1();
+		Point otherP2 = this.getP2();
+		if (thisP1.comparePoint(otherP1) && thisP2.comparePoint(otherP2)) {
+			return true;
+		} else if (thisP1.comparePoint(otherP2) && thisP2.comparePoint(otherP1)) {
+			return true;
+		}
+		return false;
+	}
 	private Point p1;
 	private Point p2;
 	private double cn;

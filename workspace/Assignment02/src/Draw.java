@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 /**
  * Draws the given plane
  * @author sara
@@ -19,12 +20,15 @@ public class Draw {
 		graphEdgesVisited = new ArrayList<Edge>();
 		edgesVisited = new ArrayList<Edge>();
 		neighbours = new ArrayList<Point>();
+		nodesVisited = new HashMap<Point, Point>();
+		numOfNodesTraversed = 0;
 	}
 	// performs the AstarSearch
 	public void draw() {
+		Plane drawn = new Plane(); // keeps track of what has been drawn already
 		// origin is the starting point
 		Point origin = new Point(0,0);
-		boolean added = false; // keep track of adding to pointsToVisit
+		boolean remove = false; // keep track of adding to pointsToVisit
 		for (Point p: points) {
 			// add the point with heuristic then sort
 			// create a new Edge
@@ -42,128 +46,266 @@ public class Draw {
 		Point prevPoint = new Point(0, 0);
 		// get the next point to visit
 		System.out.println("plane.numedges:" + plane.getNumEdges());
-		for (int i = 0; graphEdgesVisited.size() < plane.getNumEdges(); i ++) {
-			System.out.println("\n\n\n\n");
-			System.out.println("next point");
-			System.out.println("graphedgesvisited:" + graphEdgesVisited.size());
-			Point currPoint = (pointsToVisit.remove(0)).getPoint(); // this actually removes it
-			if (currPoint.getX() == prevPoint.getX() && currPoint.getY() == prevPoint.getY()){
-				currPoint = (pointsToVisit.remove(0)).getPoint();
-				System.out.println("curr and pre are equal");
+		AStarNode currPoint = pointsToVisit.remove(0); // get first point to remove, should be (2,2)
+		neighbours = plane.getNeighbours(currPoint.getPoint()); // (4,4)
+		for (Point p:neighbours) {
+			AStarNode temp = new AStarNode (p, currPoint.getPoint(),plane.calculateDistance(currPoint.getPoint(), p));
+			pointsToVisit.add(temp);
+		}
+		
+		Collections.sort(pointsToVisit, AStarNodeComparator);
+		while (graphEdgesVisited.size() != plane.getNumEdges()) {
+			Collections.sort(pointsToVisit, AStarNodeComparator);
+			System.out.print("\n\n\n");
+			prevPoint = currPoint.getPoint();
+			currPoint = pointsToVisit.remove(0);
+			
+			// check that we aren't
+			nodesVisited.put(currPoint.getPoint(), prevPoint);
+			edgesVisited.add(new Edge (prevPoint, currPoint.getPoint()));
+			System.out.print("curr point:");
+			(currPoint.getPoint()).print();
+			System.out.println();
+			System.out.print("prev point");
+			prevPoint.print();
+			System.out.println();
+			pointsVisited.add(prevPoint); // add previous point to points seen
+			// check that prevPoint and currPoint form an edge on the graph
+			if(plane.searchEdges(prevPoint, currPoint.getPoint())) {
+				// add to graph edges visited
+				System.out.println("Visited a graph edge1");
+				graphEdgesVisited.add(new Edge(prevPoint, currPoint.getPoint()));
 			}
-			// add all neighbours of current node
-			neighbours = plane.getNeighbours(currPoint); // connections
-			System.out.println("The number of neighbours are:" + neighbours.size());
-			for (Point n:neighbours) {
-				n.print();
+			// check if prevpoint and currpoint form an edge visited already
+			//Edge edgeTemp = new Edge(prevPoint, currPoint.getPoint());
+			System.out.println("Points to visit are:");
+			for (AStarNode t:pointsToVisit) {
+				t.print();
+			}
+			if (!drawn.searchEdges(prevPoint, currPoint.getPoint())) {
+				drawn.addEdge(prevPoint, currPoint.getPoint());	
+			} else { //  implication; edge has been drawn already
 				System.out.println();
-			}
-			// add all of these neighbours
-			pointsToVisit.clear();
-			for (Point neighbour : neighbours) {
-				if (!prevPoint.comparePoint(neighbour)) {
-					pointsToVisit.add(new AStarNode(neighbour, currPoint, plane.calculateDistance(neighbour, currPoint)));
+				System.out.println("KKKKKKKKK");
+				System.out.println();
+				if (pointsToVisit.size() != 0) {
+					currPoint = pointsToVisit.remove(0);
+				} else {
+					// no more nodes left in points to visit
+					// keep back tracking until we find a one reachable
+					System.out.println("previous nodes are:");
+					System.out.println("numOfNodesTraversed=" + numOfNodesTraversed + " size:" + pointsVisited.size());
+					pointsVisited.get(numOfNodesTraversed).print();
+					System.out.println();
+					pointsVisited.get(numOfNodesTraversed-1).print();
+					System.out.println();
+
+					pointsVisited.get(numOfNodesTraversed-2).print();
+					System.out.println();
+					// have to keep backtracking until we can find a neighbour that has nodes
+					// able to be visited
+					/**
+					 * TODO:
+					  from here delete ones that have been visited already etc.
+					 * -> delete current nodes
+					 * -> delete all edges which have been visited already
+					 * from possible points, take in nodesVisited
+					 * }
+					 */
+					boolean found = false;
+					 for (int j = 0; !found; j++) {
+						  	Point possibleNext = pointsVisited.get(numOfNodesTraversed - j);
+						  	ArrayList<Point> possiblePoints = plane.getNeighbours(possibleNext);
+						  	for (Point p:possiblePoints) {
+								// recurse all the edges
+								for (Edge e: edgesVisited) {
+									if (possibleNext.comparePoint(e.getP1())) {
+										// current possible point has an edge explored
+										if (possiblePoints.contains(e.getP2())) {
+											possiblePoints.remove(e.getP2());
+											break;
+										}
+									}
+								}
+							}
+						  	if (possiblePoints.size() > 0) {
+						  		found = true;
+						  		System.out.println("Possible points are:");
+						  		for (Point a:possiblePoints) {
+						  			a.print();
+						  			System.out.println();
+						  		}
+						  	}
+					 }
 				}
 			}
-			// if points to visit is null:
-			if (pointsToVisit.size() == 0) {
-				/**
-				 * TODO: all the edges/ possible connections of the currPoint
-				 * have been explored
-				 */
-				neighbours = plane.getNeighbours(prevPoint);
-				for (Point previousNeighbour:neighbours) {
-					if (!previousNeighbour.comparePoint(currPoint)){
-						System.out.print("adding the point:");
-						currPoint.print();
-						previousNeighbour.print();
-						System.out.println("point added");
-						pointsToVisit.add(new AStarNode(previousNeighbour, currPoint, plane.calculateDistance(currPoint, previousNeighbour)));
+			
+			neighbours.clear();
+			neighbours = plane.getNeighbours(currPoint.getPoint()); 
+			pointsToVisit.clear();
+			for (Point p:neighbours){
+				AStarNode temp = new AStarNode (p, currPoint.getPoint(),plane.calculateDistance(currPoint.getPoint(), p));
+				// ensure current point is not added
+				if (!temp.compare(currPoint.getPoint())) {
+					pointsToVisit.add(temp);
+				}
+			}
+			// if any graph edges have been visited
+			if (!graphEdgesVisited.isEmpty()) {
+				// remove any points from points to visit that will create an edge
+				// that has already been visited
+				for (Edge e : graphEdgesVisited) {
+					Point from = e.getP1();
+					Point to = e.getP2();
+					System.out.print("from");
+					from.print();
+					System.out.println();
+					System.out.println();
+					System.out.print("to");
+					to.print();
+					System.out.println();
+					int j = 0;
+					// check this against all the points to visit
+					for (AStarNode t : pointsToVisit) {
+						if ((((t.getPoint()).getX() == from.getX()) && ((t.getPoint()).getY() == from.getY())) && 
+								((currPoint.getPoint()).getX() == to.getX() && (currPoint.getPoint()).getY() == to.getY()
+								)) {
+							System.out.print("the edge has been visited already");
+							e.print();
+							remove = false;
+							for (AStarNode s : pointsToVisit) {
+								if (s.compare(from)){
+									remove = true;
+									break;
+								}
+								j ++;
+							}
+						} else if ((((t.getPoint()).getX() == to.getX()) && ((t.getPoint()).getY() == to.getY())) && 
+								((currPoint.getPoint()).getX() == from.getX() && (currPoint.getPoint()).getY() == from.getY()
+								)) {
+							System.out.print("AAAAAathe edge has been visited already");
+							// if the point occurs then delete it
+							
+							remove = false;
+							for (AStarNode s : pointsToVisit) {
+								if (s.compare(to)){
+									remove = true;
+									break;
+								}
+								j ++;
+							}
+							e.print();
+						} 
+					}
+					System.out.println("A");
+					if (remove && pointsToVisit.size()!= 0) {
+						pointsToVisit.remove(j);
 					}
 				}
 			}
-			Collections.sort(pointsToVisit, AStarNodeComparator);
-			System.out.println("Points to visit are:");
-			for (AStarNode aStarNode : pointsToVisit) {
-				aStarNode.print();
+			boolean usedPrev = false;
+			System.out.println("points to visit:");
+			for (AStarNode n:pointsToVisit) {
+				n.print();
 				System.out.println();
 			}
-			System.out.println("no more");
-			
-			/**
-			 * Edge to have priority, if it is an edge
-			 * make it zero heuristic
-			 */
-			
-			/**
-			 * TODO: fix implementation of searchEdges, 
-			 * so that it only needs to be searched once, not twice
-			 */
-			for (Edge e : edgesVisited) {
-				Point ePoint1 = e.getP1();
-				Point ePoint2 = e.getP2();
-				if ((ePoint1.getX() == currPoint.getX()) && (ePoint1.getY() == currPoint.getY()) &&
-					(ePoint2.getX() == prevPoint.getX()) && (ePoint2.getY() == prevPoint.getY())) {
-					currPoint = (pointsToVisit.remove(0)).getPoint();
-					e.print();
-					System.out.print("   has been visited already");
-				} else if ((ePoint2.getX() == currPoint.getX()) && (ePoint2.getY() == currPoint.getY()) &&
-						(ePoint1.getX() == prevPoint.getX()) && (ePoint1.getY() == prevPoint.getY())) {
-					currPoint = (pointsToVisit.remove(0)).getPoint();
-					e.print();
-					System.out.print("   has been visited already");
+			if (pointsToVisit.size() == 0) {
+				usedPrev = true;
+				System.out.println("visit neighbours of prev");
+				neighbours = plane.getNeighbours(prevPoint);
+				// and from here, delete curr point
+				pointsToVisit.clear();
+				for (Point p : neighbours) {
+					AStarNode nodeToVisit = new AStarNode(p, currPoint.getPoint(), plane.calculateDistance(p, currPoint.getPoint()));
+					// ensure point is not equal
+					if (!nodeToVisit.compare(currPoint.getPoint())) {
+						pointsToVisit.add(nodeToVisit);
+					}
+				}
+				// ensure that we dont add curr Point
+				if (pointsToVisit.contains(currPoint.getPoint())) {
+					pointsToVisit.remove(currPoint.getPoint());
 				}
 			}
-			// make sure currPoint is not prevPoint OR
-			// does not occur in visited
-			parentsVisited.add(currPoint);
-			System.out.print("Current point is:");
-			currPoint.print();
-			System.out.print("prev point is:");
-			prevPoint.print();
-			if(plane.searchEdges(currPoint, prevPoint)){
-				// this edge has been visited
-				// add to visited edges list
-				graphEdgesVisited.add(new Edge(currPoint, prevPoint));
-				System.out.println("edge is in graph");
-			} 
-			// search to see if edge has been added already
-			for (Edge e : edgesVisited) {
-				if ((e.getP1()).equals(currPoint) && (e.getP2()).equals(prevPoint)) {
-					currPoint = (pointsToVisit.remove(0)).getPoint();
-				} else if ((e.getP1()).equals(prevPoint) && (e.getP2()).equals(currPoint)) {
-					currPoint = (pointsToVisit.remove(0)).getPoint();
-				}
-			}
-			// have 2 check if 2 points are equal again
-			if (currPoint.comparePoint(prevPoint)) {
-				currPoint = (pointsToVisit.remove(0)).getPoint();
+			for (AStarNode n:pointsToVisit) {
+				n.print();
+				System.out.println();
 			}
 			System.out.println();
-			pointsVisited.add(currPoint);
-			//pointsToVisit.clear();
-			// add the node with the lowest cost
-			// hash map it here, with its parent
-			
-			// add curr/prev to list of edges visited
-			edgesVisited.add(new Edge(currPoint, prevPoint));
-			System.out.println("The edges which have been visited already are:");
-			for (Edge e : edgesVisited) {
-				e.print();
+			remove = false;
+			AStarNode pointToRemove = null;
+			// check that points To Visit does not contain a traversed edge
+			if (edgesVisited.size() != 0 && !usedPrev){
+				for (Edge e : edgesVisited) {
+					Point start = e.getP1(); //(4,7) - curr point
+					Point end = e.getP2(); // (4, 4) 
+					for (AStarNode k : pointsToVisit) {
+						if ((k.getPoint()).comparePoint(start) || 
+								((k.getPoint()).comparePoint(end))) {
+							System.out.print("removing points");
+							k.getPoint().print();
+							System.out.println();
+							start.print();
+							System.out.println();
+							end.print();
+							System.out.println();
+							//remove = true;
+							pointToRemove = k;
+						}
+					}
+				}
+			}
+			if (remove) {
+				pointsToVisit.remove(pointToRemove);
+			}
+			System.out.println("the next points to visit areL:");
+			for (AStarNode d : pointsToVisit) {
+				d.print();
 				System.out.println();
 			}
-			prevPoint = currPoint;
-			Collections.sort(pointsToVisit, AStarNodeComparator);
-			// if curr and top is in edges, inc. edgeCount
-			System.out.println("points to visit are:");
-				for (AStarNode a:pointsToVisit) {
-					a.print();
-					System.out.println();
-				} 
-			
+
+			numOfNodesTraversed ++; // increase number of nodes seen
 		}
+		
+		
+		System.out.print("previous point");
+		prevPoint.print();
+		System.out.println();
+		// pick the one with the lowest cost
+		System.out.print("Neighbours of:");
+		(currPoint.getPoint()).print();
+		System.out.println();
+		
+		System.out.println("\n\n");
+		Collections.sort(pointsToVisit, AStarNodeComparator);
+		System.out.println("next points to visit are:");
+		for (AStarNode n: pointsToVisit) {
+			n.print();
+			System.out.println();
+		}
+
+
+		System.out.println("path so far:");
+		Iterator<Point> keySetIterator = nodesVisited.keySet().iterator();
+		while(keySetIterator.hasNext()){
+			  Point key = keySetIterator.next();
+			  Point value = nodesVisited.get(key);
+			  value.print();
+			  System.out.print ("  =>  ");
+			  key.print();
+			  System.out.println();
+		}
+		
+		for (Edge e:edgesVisited) {
+			e.print();
+			System.out.println();
+		}
+		System.out.println();
+		drawn.printEdges();
 	}
-	private ArrayList<Point> neighbours;
+	private int numOfNodesTraversed;
+	private HashMap<Point, Point> nodesVisited; // node - parent
+	private ArrayList<Point> neighbours; // ie. connected edges
 	private ArrayList<Edge> edgesVisited;
 	private ArrayList<Edge> graphEdgesVisited;
 	private ArrayList<Point> parentsVisited;

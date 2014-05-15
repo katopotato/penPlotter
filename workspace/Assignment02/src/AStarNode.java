@@ -10,9 +10,9 @@ public class AStarNode implements Comparable <AStarNode>{
 		this.cn = cn;
 		this.total = cn + hn;
 		this.point = from;
-		System.out.println("Creating AStarNode with cn:" + this.cn + " total:" + this.total);
-		System.out.print("from: ");
-		from.print();
+		//System.out.println("Creating AStarNode with cn:" + this.cn + " total:" + this.total);
+		//System.out.print("from: ");
+		//from.print();
 		//System
 	}
 	/**
@@ -67,5 +67,11 @@ public class AStarNode implements Comparable <AStarNode>{
 			return 1;
 		}
 		return 0;
+	}
+	public boolean compare(Point other) {
+		if (this.getPoint().getX() == other.getX() && this.getPoint().getY() == other.getY()) {
+			return true;
+		}
+		return false;
 	}
 }

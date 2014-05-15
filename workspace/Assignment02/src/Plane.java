@@ -98,13 +98,11 @@ public class Plane {
 			if ((value.getX() == to.getX()) &&  (value.getY() == to.getY())){
 				  return true;
 		  	} else {
-		  		return false;
 		  	}
 		  } else if (value.getX() == from.getX() && value.getY() == from.getY()) {
 			  if (key.getX() == to.getX() && key.getY() == to.getY()){
 				  return true;
 			  } else {
-				  return false;
 			  }
 		  }
 		}
@@ -128,19 +126,14 @@ public class Plane {
 	}
 	
 	public ArrayList<Point> getNeighbours(Point point) {
-		System.out.print("Finding neigbours of:");
-		point.print();
-		System.out.println();
 		Iterator<Point> keySetIterator = edgesHM.keySet().iterator();
 		ArrayList<Point> neighbours = new ArrayList<Point>();
 		while(keySetIterator.hasNext()){
 		  Point key = keySetIterator.next();
 		  Point value = edgesHM.get(key);
-		  if (key.equals(point)){
-			if (((key.getX() == point.getX()) &&  (key).getY() == point.getY())){
+			if ((key.getX() == point.getX()) && (key.getY() == point.getY())){
 				neighbours.add((value));
-		  	} 
-		  } else if ((value.getX() == point.getX()) && (value.getY() == point.getY())) {
+		  	}  else if ((value.getX() == point.getX()) && (value.getY() == point.getY())) {
 			  neighbours.add(key);
 		  }
 		}
@@ -153,8 +146,9 @@ public class Plane {
 	 * @return
 	 */
 	public double calculateDistance(Point p1, Point p2) {
-		double distance = Math.sqrt((Math.abs(p1.getX()-p2.getX())^2) + 
-				(Math.abs(p1.getY()-p2.getY()))^2);
+		double length = Math.abs(p1.getX()-p2.getX());
+		double height = Math.abs(p1.getY()-p2.getY());
+		double distance = Math.sqrt((length*length) + (height*height));
 		return distance;
 	}
 	private HashMap<Integer, Integer> plane;
